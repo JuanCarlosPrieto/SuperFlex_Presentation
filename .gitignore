@@ -1,0 +1,42 @@
+
+# LaTeX auxiliary files
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.synctex
+*.nav
+*.snm
+*.vrb
+*.xdv
+
+# Bibliography auxiliary files
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+
+# Index and glossary files
+*.idx
+*.ind
+*.ilg
+*.glo
+*.gls
+*.glg
+*.acn
+*.acr
+*.alg
+
+# Temporary files
+*.tmp
+*.bak
+*.sav
+
+# LaTeX build directory
+build/
+out/

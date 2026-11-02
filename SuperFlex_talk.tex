@@ -3,6 +3,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern,amsmath,amssymb,mathtools,bm,booktabs,multicol,graphicx,tikz,xcolor,colortbl}
 \usepackage{microtype}
+\pdfstringdefDisableCommands{\let\translate\relax}
 \usetikzlibrary{arrows.meta,positioning,calc,shapes.geometric}
 \definecolor{navy}{HTML}{10243D}
 \definecolor{blue}{HTML}{1577A8}
@@ -52,7 +53,7 @@
 \end{frame}
 
 % 2
-\begin{frame}{The actual task: interpret a 3D shape with a few parts} \timemark{0:35}
+\begin{frame}{The actual task: interpret a 3D shape with a few parts}
 \begin{columns}[T,onlytextwidth]
 \column{.52\textwidth}
 \vspace{.2cm}
@@ -74,7 +75,7 @@ A compact \cblue{set of parametric solids} whose union reconstructs the object, 
 \end{frame}
 
 % 3
-\begin{frame}{Where does SuperFlex fit?} \timemark{0:55}
+\begin{frame}{Where does SuperFlex fit?}
 \vspace{.15cm}
 \begin{columns}[T,onlytextwidth]
 \column{.33\textwidth}
@@ -82,7 +83,6 @@ A compact \cblue{set of parametric solids} whose union reconstructs the object, 
 \textbf{EMS} (2022): probabilistic fitting, robust to outliers.\\[.14cm]
 \textbf{Marching Primitives} (2023): iterative SDF-driven fitting.
 \end{block}
-\vspace{.13cm}\ctiny{Strong geometric fit, but per-object optimization and dependence on initialization or SDFs.}
 \column{.33\textwidth}
 \begin{block}{Learning-based}
 \textbf{SQ} (2019): learn primitive abstractions.\\[.14cm]
@@ -95,12 +95,10 @@ A compact \cblue{set of parametric solids} whose union reconstructs the object, 
 \textbf{Adds} expressive geometry, stronger losses, optional refinement and occlusion training.
 \end{block}
 \end{columns}
-\vspace{.18cm}\centering\cblue{The architecture is evolutionary; the major advances are geometric and objective-level.}
-\src{Paper Secs. 1--2. Dates follow the references cited by the paper.}
 \end{frame}
 
 % 4
-\begin{frame}[shrink=6]{The mathematical building block: a superellipsoid} \timemark{1:00}
+\begin{frame}[shrink=6]{The mathematical building block: a superellipsoid}
 \begin{columns}[T,onlytextwidth]
 \column{.53\textwidth}
 \vspace{.22cm}
@@ -120,17 +118,14 @@ q_{\mathrm{can}}(\mathbf x)=
 \end{itemize}
 \column{.45\textwidth}
 \centering\includegraphics[width=\linewidth,height=4.5cm,keepaspectratio]{assets/demo_superquadrics.png}
-\src{Original CPU-generated illustration (companion notebook).}
 \end{columns}
-\src{Paper Eq. (1). Absolute values make the intended signed powers explicit.}
 \end{frame}
 
 % 5
-\begin{frame}{Five canonical shape parameters are not enough} \timemark{0:45}
+\begin{frame}{Five canonical shape parameters are not enough}
 \begin{columns}[T,onlytextwidth]
 \column{.58\textwidth}
 \centering\includegraphics[width=\linewidth,height=4.9cm,keepaspectratio]{assets/demo_composition.png}
-\src{Original illustrations: rigid, tapered, bent and composed.}
 \column{.40\textwidth}
 \begin{block}{Failure of rigid primitives}
 Straight, symmetric parts are efficient to model---but curved and tapering parts need \textbf{more primitives}, even when a single semantic part would suffice.
@@ -143,7 +138,7 @@ Straight, symmetric parts are efficient to model---but curved and tapering parts
 \end{frame}
 
 % 6
-\begin{frame}{Deformation: what do $\tau$, $k$, and $\alpha$ do?} \timemark{1:05}
+\begin{frame}{Deformation: what do $\tau$, $k$, and $\alpha$ do?}
 \begin{columns}[T,onlytextwidth]
 \column{.5\textwidth}
 \centering\textbf{Tapering along $z$}\par\vspace{.05cm}
@@ -161,11 +156,10 @@ y'&=y(1+\tau_y z/s_z),\quad z'=z.
 \item Repeat for bending about $x$ and $y$.
 \end{itemize}
 \end{columns}
-\src{Paper Fig. 2; Appendix A. Original geometric plots use single-axis bending.}
 \end{frame}
 
 % 7
-\begin{frame}{Nineteen parameters, one implicit field} \timemark{0:50}
+\begin{frame}{Nineteen parameters, one implicit field}
 \vspace{.09cm}
 \begin{center}
 \begin{tabular}{lccccc}
@@ -186,15 +180,13 @@ $3+3$ & $3$ & $2$ & $2$ & $6$ & \textbf{19} \\
 \item On the surface $q(\mathbf x;\Theta)=1$; inside $q<1$ (in the valid invertible regime).
 \item Important: $T^{-1}$ and $B_a^{-1}$ are \textbf{inverse geometric maps}, not inverse neural nets.
 \end{itemize}
-\src{Paper Eq. (2), Appendix A. $R$ contributes three degrees of freedom (though a $3\times3$ matrix is used).}
 \end{frame}
 
 % 8
-\begin{frame}[shrink=3]{Radial distance: cheap geometry-aware supervision} \timemark{1:15}
+\begin{frame}[shrink=3]{Radial distance: cheap geometry-aware supervision}
 \begin{columns}[T,onlytextwidth]
 \column{.54\textwidth}
 \centering\includegraphics[width=\linewidth,height=4.65cm,keepaspectratio]{assets/demo_radial.png}
-\src{Original illustration: shortest Euclidean distance is generally different.}
 \column{.44\textwidth}
 \begin{block}{Rigid case: derive it}
 $\displaystyle q(\lambda\mathbf x)=\lambda^{2/\epsilon_1}q(\mathbf x)$\\[.2cm]
@@ -209,11 +201,10 @@ $\displaystyle \lambda_*=q(\mathbf x)^{-\epsilon_1/2}$
 \item Fast surrogate, \textbf{not Euclidean SDF}.
 \end{itemize}
 \end{columns}
-\src{Paper Eq. (3). Strict ray-intersection derivation relies on homogeneity; after nonlinear deformation the formula is a proxy.}
 \end{frame}
 
 % 9
-\begin{frame}[shrink=8]{Inside the model: point features and primitive queries} \timemark{1:15}
+\begin{frame}[shrink=8]{Inside the model: point features and primitive queries}
 \begin{center}\includegraphics[width=.96\linewidth,height=3.06cm,keepaspectratio]{assets/paper_architecture.png}\end{center}
 \vspace{.07cm}
 \begin{columns}[T,onlytextwidth]
@@ -235,7 +226,7 @@ $\displaystyle W=\operatorname{softmax}_{p}\!\bigl(F_{PC}\,\phi(F_{SQ})^\top\big
 \end{frame}
 
 % 10
-\begin{frame}{Why change the loss? Chamfer alone is insufficient} \timemark{0:40}
+\begin{frame}{Why change the loss? Chamfer alone is insufficient}
 \begin{columns}[T,onlytextwidth]
 \column{.53\textwidth}
 \centering\includegraphics[width=\linewidth,height=4.5cm,keepaspectratio]{assets/paper_qualitative_shapenet.png}
@@ -251,11 +242,10 @@ Matches samples on observed and predicted \textbf{surfaces}, not directly the \t
 \end{itemize}
 \vspace{.13cm}\centering\cblue{Solution: global occupancy + local surface alignment.}
 \end{columns}
-\src{Paper Sec. 4.1. The paper describes these shortcomings for primarily Chamfer-supervised baselines.}
 \end{frame}
 
 % 11
-\begin{frame}[shrink=7]{New loss I: global volumetric consistency} \timemark{1:15}
+\begin{frame}[shrink=7]{New loss I: global volumetric consistency}
 \begin{columns}[T,onlytextwidth]
 \column{.55\textwidth}
 \vspace{.13cm}
@@ -276,11 +266,10 @@ $\hat O=I_1+I_2-I_1 I_2$.
 \begin{equation*}
 \boxed{\mathcal L_{\rm IoU}=-\log\frac{\sum_{\mathbf x\in\mathcal V}\hat O(\mathbf x)O(\mathbf x)}{\sum_{\mathbf x\in\mathcal V}[\hat O(\mathbf x)+O(\mathbf x)-\hat O(\mathbf x)O(\mathbf x)]}}
 \end{equation*}
-\src{Paper Eqs. (6)--(8). Original 2D diagram; actual loss is sampled in 3D.}
 \end{frame}
 
 % 12
-\begin{frame}{New loss II: surface alignment, point by point} \timemark{1:05}
+\begin{frame}{New loss II: surface alignment, point by point}
 \begin{columns}[T,onlytextwidth]
 \column{.59\textwidth}
 \vspace{.18cm}
@@ -293,17 +282,15 @@ $\hat O=I_1+I_2-I_1 I_2$.
 \item $\psi$: robust bounded asymmetric distance penalty.
 \end{itemize}
 \vspace{.12cm}
-{\small\color{grey} Appendix B.2: $\delta=0.05$, $\omega=0.1$ in the selected model.}
 \column{.39\textwidth}
 \centering\includegraphics[width=\linewidth,height=3.85cm,keepaspectratio]{assets/demo_psi.png}
 \vspace{.03cm}
 {\footnotesize $\psi(d)=\begin{cases}\delta\tanh(d/\delta),& d\ge0,\\-\omega\delta\tanh(d/\delta),& d<0.\end{cases}$}
 \end{columns}
-\src{Paper Eq. (9), Appendix B.2. Original activation plot.}
 \end{frame}
 
 % 13
-\begin{frame}{Compact decompositions require explicit regularization} \timemark{0:45}
+\begin{frame}{Compact decompositions require explicit regularization}
 \vspace{.06cm}
 \begin{equation*}
 \boxed{\mathcal L=\lambda_{\rm IoU}\mathcal L_{\rm IoU}+\lambda_{\rm SDF}\mathcal L_{\rm SDF}
@@ -331,7 +318,7 @@ Binary cross-entropy aligns predicted existence with usage.
 \end{frame}
 
 % 14
-\begin{frame}{Optional test-time optimization: local geometric refinement} \timemark{1:00}
+\begin{frame}{Optional test-time optimization: local geometric refinement}
 \begin{columns}[T,onlytextwidth]
 \column{.50\textwidth}
 \begin{enumerate}\setlength\itemsep{.56em}
@@ -346,12 +333,11 @@ Binary cross-entropy aligns predicted existence with usage.
 \centering\includegraphics[width=\linewidth,height=3.75cm,keepaspectratio]{assets/paper_optimization.png}
 \src{Paper Fig. 5. Refines existing primitives rather than training a new network.}
 \end{columns}
-\vspace{.05cm}\centering\cblue{Result: 0.72 $\rightarrow$ 0.87 IoU, but 0.0082 s $\rightarrow$ 5 s/object.}
-\src{Paper Sec. 4.2, Table 2: 1000 Adam steps, $T_{\rm opt}=0.01$.}
+\vspace{.15cm}\centering\cblue{Result: 0.72 $\rightarrow$ 0.87 IoU, but 0.0082 s $\rightarrow$ 5 s/object.}
 \end{frame}
 
 % 15
-\begin{frame}{Partial scans: from self-supervision to structural completion} \timemark{1:00}
+\begin{frame}{Partial scans: from self-supervision to structural completion}
 \begin{columns}[T,onlytextwidth]
 \column{.48\textwidth}
 \centering\includegraphics[width=\linewidth,height=4.4cm,keepaspectratio]{assets/paper_partial_ase.png}
@@ -368,11 +354,10 @@ Binary cross-entropy aligns predicted existence with usage.
 Because primitives form a set, Hungarian matching removes ordering ambiguity before applying shape-based Chamfer supervision.
 \end{beamercolorbox}
 \end{columns}
-\src{Paper Sec. 4.3. This phase is supervised by generated targets, unlike the first phase.}
 \end{frame}
 
 % 16
-\begin{frame}{Experimental protocol: what was actually tested?} \timemark{0:45}
+\begin{frame}{Experimental protocol: what was actually tested?}
 \vspace{.11cm}
 \begin{columns}[T,onlytextwidth]
 \column{.49\textwidth}
@@ -395,11 +380,10 @@ Because primitives form a set, Hungarian matching removes ordering ambiguity bef
 \end{block}
 \end{columns}
 \vspace{.25cm}\centering\cblue{Separate feed-forward inference from the much slower optional refinement.}
-\src{Paper Sec. 5. Training-compute specification does not imply the same hardware is required for inference.}
 \end{frame}
 
 % 17
-\begin{frame}{ShapeNet: the actual quantitative comparison} \timemark{0:55}
+\begin{frame}{ShapeNet: the actual quantitative comparison}
 \begin{center}
 \renewcommand{\arraystretch}{1.25}
 \begin{tabular}{lrrrr}
@@ -428,7 +412,7 @@ Bending + tapering improve from 0.70 to 0.72 while keeping a compact representat
 \end{frame}
 
 % 18
-\begin{frame}{Ablation: why do the losses work together?} \timemark{1:15}
+\begin{frame}{Ablation: why do the losses work together?}
 \vspace{.04cm}
 \begin{center}\renewcommand{\arraystretch}{1.22}
 \begin{tabular}{lrrrr}
@@ -451,7 +435,7 @@ $\mathcal L_{\rm IoU}+\mathcal L_{\rm SDF}$ & 0.72 & \textbf{0.042} & 14\% & 5.8
 \end{frame}
 
 % 19
-\begin{frame}{Why keep deformation and test-time optimization?} \timemark{0:45}
+\begin{frame}{Why keep deformation and test-time optimization?}
 \begin{columns}[T,onlytextwidth]
 \column{.49\textwidth}
 \centering\textbf{Deformation ablation (refined)}\par\vspace{.15cm}
@@ -479,7 +463,7 @@ Runtime & \textbf{0.0082 s} & 5 s\\\bottomrule
 \end{frame}
 
 % 20
-\begin{frame}[shrink=3]{Occluded objects: generalization needs a new training signal} \timemark{0:50}
+\begin{frame}[shrink=3]{Occluded objects: generalization needs a new training signal}
 \begin{columns}[T,onlytextwidth]
 \column{.51\textwidth}
 \centering\includegraphics[width=\linewidth,height=4.6cm,keepaspectratio]{assets/paper_scannet.png}
@@ -503,8 +487,8 @@ Completing unseen parts requires learned priors from \textbf{complete pseudo-tar
 \end{frame}
 
 % 21
-\begin{frame}[shrink=8]{Conclusions --- and what remains open} \timemark{0:55}
-\begin{columns}[T,onlytextwidth]
+\begin{frame}[shrink=8]{Conclusions --- and what remains open}
+\begin{columns}[T]
 \column{.57\textwidth}
 \begin{block}{Three things to remember}
 \begin{enumerate}\setlength\itemsep{.4em}
