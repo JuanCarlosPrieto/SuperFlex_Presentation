@@ -1,0 +1,668 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern,amsmath,amssymb,mathtools,bm,booktabs,multicol,graphicx,tikz,xcolor,colortbl}
+\usepackage{microtype}
+\usetikzlibrary{arrows.meta,positioning,calc,shapes.geometric}
+\definecolor{navy}{HTML}{10243D}
+\definecolor{blue}{HTML}{1577A8}
+\definecolor{teal}{HTML}{00A0A1}
+\definecolor{orange}{HTML}{E49A54}
+\definecolor{grey}{HTML}{5B6975}
+\definecolor{pale}{HTML}{EDF5F8}
+\definecolor{soft}{HTML}{F4F7FA}
+\setbeamercolor{normal text}{fg=navy,bg=white}
+\setbeamercolor{frametitle}{fg=navy,bg=white}
+\setbeamercolor{title}{fg=navy}
+\setbeamercolor{structure}{fg=blue}
+\setbeamercolor{block title}{fg=white,bg=navy}
+\setbeamercolor{block body}{fg=navy,bg=soft}
+\setbeamercolor{alerted text}{fg=blue}
+\setbeamerfont{frametitle}{size=\large,series=\bfseries}
+\setbeamerfont{title}{size=\LARGE,series=\bfseries}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{itemize item}{\raisebox{.2ex}{\tikz\fill[teal] (0,0) circle(1.8pt);}}
+\setbeamertemplate{itemize subitem}{\raisebox{.2ex}{\tikz\fill[blue] (0,0) circle(1.3pt);}}
+\setbeamertemplate{headline}{}
+\setbeamertemplate{frametitle}{\vskip0.13cm\hskip0.31cm\insertframetitle\par\vskip0.08cm\hskip0.31cm{\color{teal}\rule{0.93\paperwidth}{0.8pt}}\vskip0.02cm}
+\setbeamertemplate{footline}{\leavevmode\hbox{\begin{beamercolorbox}[wd=.82\paperwidth,ht=2.8ex,dp=1.1ex,leftskip=.36cm]{normal text}{\scriptsize\color{grey} SuperFlex \quad | \quad Geometric Deep Learning \quad | \quad Tavernini et al., ECCV 2026}\end{beamercolorbox}\begin{beamercolorbox}[wd=.18\paperwidth,ht=2.8ex,dp=1.1ex,rightskip=.35cm plus1fil]{normal text}{\scriptsize\color{grey}\insertframenumber}\end{beamercolorbox}}}
+\setbeamersize{text margin left=0.35cm,text margin right=0.35cm}
+\newcommand{\cblue}[1]{{\color{blue}\bfseries #1}}
+\newcommand{\ctiny}[1]{{\fontsize{8}{9}\selectfont\color{grey}#1}}
+\newcommand{\src}[1]{\vspace{0.03cm}{\fontsize{7.8}{9}\selectfont\color{grey}#1}}
+\newcommand{\eqbox}[1]{\begin{beamercolorbox}[rounded=true,sep=0.13cm]{block body}\centering\displaystyle #1\end{beamercolorbox}}
+\newcommand{\img}[2]{\includegraphics[width=#1]{assets/#2}}
+\newcommand{\timemark}[1]{\hfill{\color{grey}\footnotesize #1}}
+\title{SuperFlex}
+\subtitle{Deformable superquadrics for point-cloud decomposition}
+\author{Geometric Deep Learning | Paper presentation}
+\date{20-minute talk + 10-minute discussion}
+\begin{document}
+
+% 1
+\begin{frame}[plain]
+\vspace{0.52cm}
+{\color{teal}\Large GEOMETRIC DEEP LEARNING \quad / \quad PAPER STUDY}\par\vspace{0.37cm}
+{\color{navy}\fontsize{35}{40}\selectfont\bfseries SuperFlex}\par\vspace{0.1cm}
+{\color{grey}\Large Deformable Superquadrics for Point Cloud Decomposition}\par\vspace{0.18cm}
+{\small Gabriel Tavernini, Elisabetta Fedele, Tiago Novello, Leonidas Guibas, Marc Pollefeys, Francis Engelmann}\par
+{\small ECCV 2026}\par\vspace{0.2cm}
+\begin{center}\includegraphics[width=.77\linewidth,height=2.4cm,keepaspectratio]{assets/paper_teaser.png}\end{center}
+\src{Figures reproduced from the paper, Fig. 1. Source: arXiv:2607.01015.}
+\end{frame}
+
+% 2
+\begin{frame}{The actual task: interpret a 3D shape with a few parts} \timemark{0:35}
+\begin{columns}[T,onlytextwidth]
+\column{.52\textwidth}
+\vspace{.2cm}
+\begin{block}{Input}
+A point cloud $\mathcal P=\{\mathbf x_i\}_{i=1}^N$, with $\mathbf x_i\in\mathbb R^3$.
+\end{block}
+\begin{block}{Output}
+A compact \cblue{set of parametric solids} whose union reconstructs the object, with meaningful parts.
+\end{block}
+\begin{itemize}\setlength\itemsep{.5em}
+\item \textbf{Fidelity}: closely match the target geometry.
+\item \textbf{Parsimony}: use few primitives.
+\item \textbf{Robustness}: cope with missing surfaces.
+\end{itemize}
+\column{.46\textwidth}
+\centering\img{\linewidth}{paper_qualitative_shapenet.png}
+\src{Paper Fig. 4: each colour represents one primitive.}
+\end{columns}
+\end{frame}
+
+% 3
+\begin{frame}{Where does SuperFlex fit?} \timemark{0:55}
+\vspace{.15cm}
+\begin{columns}[T,onlytextwidth]
+\column{.33\textwidth}
+\begin{block}{Optimization-based}
+\textbf{EMS} (2022): probabilistic fitting, robust to outliers.\\[.14cm]
+\textbf{Marching Primitives} (2023): iterative SDF-driven fitting.
+\end{block}
+\vspace{.13cm}\ctiny{Strong geometric fit, but per-object optimization and dependence on initialization or SDFs.}
+\column{.33\textwidth}
+\begin{block}{Learning-based}
+\textbf{SQ} (2019): learn primitive abstractions.\\[.14cm]
+\textbf{CSA} (2021): joint cuboid assignment and prediction.\\[.14cm]
+\textbf{SuperDec} (2025): set-prediction Transformer.
+\end{block}
+\column{.33\textwidth}
+\begin{block}{SuperFlex (2026)}
+\textbf{Inherits} SuperDec's point-encoder + Transformer decoder.\\[.14cm]
+\textbf{Adds} expressive geometry, stronger losses, optional refinement and occlusion training.
+\end{block}
+\end{columns}
+\vspace{.18cm}\centering\cblue{The architecture is evolutionary; the major advances are geometric and objective-level.}
+\src{Paper Secs. 1--2. Dates follow the references cited by the paper.}
+\end{frame}
+
+% 4
+\begin{frame}[shrink=6]{The mathematical building block: a superellipsoid} \timemark{1:00}
+\begin{columns}[T,onlytextwidth]
+\column{.53\textwidth}
+\vspace{.22cm}
+{\large Canonical implicit surface}\par\vspace{.13cm}
+\begin{equation*}\boxed{\displaystyle
+q_{\mathrm{can}}(\mathbf x)=
+\left[\left|\frac{x}{s_x}\right|^{\frac{2}{\epsilon_2}}+
+\left|\frac{y}{s_y}\right|^{\frac{2}{\epsilon_2}}\right]^{\frac{\epsilon_2}{\epsilon_1}}
++\left|\frac{z}{s_z}\right|^{\frac{2}{\epsilon_1}} }
+\end{equation*}
+\vspace{.0cm}\centering\Large $\mathcal S=\{\mathbf x:q_{\rm can}(\mathbf x)=1\}$
+\vspace{.16cm}\par\raggedright
+\begin{itemize}\setlength\itemsep{.42em}
+\item $\mathbf s=(s_x,s_y,s_z)$: axis scales.
+\item $\epsilon_1$: meridional (vertical) profile.
+\item $\epsilon_2$: horizontal cross-section.
+\end{itemize}
+\column{.45\textwidth}
+\centering\includegraphics[width=\linewidth,height=4.5cm,keepaspectratio]{assets/demo_superquadrics.png}
+\src{Original CPU-generated illustration (companion notebook).}
+\end{columns}
+\src{Paper Eq. (1). Absolute values make the intended signed powers explicit.}
+\end{frame}
+
+% 5
+\begin{frame}{Five canonical shape parameters are not enough} \timemark{0:45}
+\begin{columns}[T,onlytextwidth]
+\column{.58\textwidth}
+\centering\includegraphics[width=\linewidth,height=4.9cm,keepaspectratio]{assets/demo_composition.png}
+\src{Original illustrations: rigid, tapered, bent and composed.}
+\column{.40\textwidth}
+\begin{block}{Failure of rigid primitives}
+Straight, symmetric parts are efficient to model---but curved and tapering parts need \textbf{more primitives}, even when a single semantic part would suffice.
+\end{block}
+\vspace{.12cm}\begin{itemize}\setlength\itemsep{.5em}
+\item \cblue{Tapering}: changing cross-sectional width.
+\item \cblue{Bending}: non-straight central axis.
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% 6
+\begin{frame}{Deformation: what do $\tau$, $k$, and $\alpha$ do?} \timemark{1:05}
+\begin{columns}[T,onlytextwidth]
+\column{.5\textwidth}
+\centering\textbf{Tapering along $z$}\par\vspace{.05cm}
+\includegraphics[width=\linewidth,height=2.7cm,keepaspectratio]{assets/demo_taper.png}
+\vspace{.01cm}\begin{equation*}\begin{aligned}
+x'&=x(1+\tau_x z/s_z),\\[-1pt]
+y'&=y(1+\tau_y z/s_z),\quad z'=z.
+\end{aligned}\end{equation*}
+\column{.49\textwidth}
+\centering\textbf{Bending about $z$}\par\vspace{.05cm}
+\includegraphics[width=\linewidth,height=2.7cm,keepaspectratio]{assets/demo_bend.png}
+\vspace{.01cm}\begin{itemize}\setlength\itemsep{.22em}
+\item $k_z$: curvature; circular radius $1/|k_z|$.
+\item $\alpha_z$: \textbf{azimuth} of the bending plane, not another curvature.
+\item Repeat for bending about $x$ and $y$.
+\end{itemize}
+\end{columns}
+\src{Paper Fig. 2; Appendix A. Original geometric plots use single-axis bending.}
+\end{frame}
+
+% 7
+\begin{frame}{Nineteen parameters, one implicit field} \timemark{0:50}
+\vspace{.09cm}
+\begin{center}
+\begin{tabular}{lccccc}
+\toprule
+Pose & Scale & Shape & Taper & Bend & \textbf{Total}\\
+$(\mathbf t,R)$ & $\mathbf s$ & $(\epsilon_1,\epsilon_2)$ & $(\tau_x,\tau_y)$ & $\bm\beta=(k_a,\alpha_a)_{a=x,y,z}$ & \\
+$3+3$ & $3$ & $2$ & $2$ & $6$ & \textbf{19} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\vspace{.24cm}
+\begin{equation*}
+\boxed{q(\mathbf x;\Theta)=q_{\rm can}\!\left(
+\underbrace{T^{-1}\circ B_y^{-1}\circ B_x^{-1}\circ B_z^{-1}}_{\text{undo deformations}}\bigl(R^\top(\mathbf x-\mathbf t)\bigr);\mathbf s,\bm\epsilon\right)}
+\end{equation*}
+\begin{itemize}\setlength\itemsep{.32em}
+\item To test a world point, \textbf{undo its pose} and \textbf{undo the deformations}.
+\item On the surface $q(\mathbf x;\Theta)=1$; inside $q<1$ (in the valid invertible regime).
+\item Important: $T^{-1}$ and $B_a^{-1}$ are \textbf{inverse geometric maps}, not inverse neural nets.
+\end{itemize}
+\src{Paper Eq. (2), Appendix A. $R$ contributes three degrees of freedom (though a $3\times3$ matrix is used).}
+\end{frame}
+
+% 8
+\begin{frame}[shrink=3]{Radial distance: cheap geometry-aware supervision} \timemark{1:15}
+\begin{columns}[T,onlytextwidth]
+\column{.54\textwidth}
+\centering\includegraphics[width=\linewidth,height=4.65cm,keepaspectratio]{assets/demo_radial.png}
+\src{Original illustration: shortest Euclidean distance is generally different.}
+\column{.44\textwidth}
+\begin{block}{Rigid case: derive it}
+$\displaystyle q(\lambda\mathbf x)=\lambda^{2/\epsilon_1}q(\mathbf x)$\\[.2cm]
+At $q(\lambda_*\mathbf x)=1$:\\[-.03cm]
+$\displaystyle \lambda_*=q(\mathbf x)^{-\epsilon_1/2}$
+\end{block}
+\begin{equation*}
+\boxed{\displaystyle d_{rad}=\|R^\top(\mathbf x-\mathbf t)\|\bigl(1-q(\mathbf x;\Theta)^{-\epsilon_1/2}\bigr)}
+\end{equation*}
+\begin{itemize}\setlength\itemsep{.18em}
+\item $d>0$ outside; $d<0$ inside.
+\item Fast surrogate, \textbf{not Euclidean SDF}.
+\end{itemize}
+\end{columns}
+\src{Paper Eq. (3). Strict ray-intersection derivation relies on homogeneity; after nonlinear deformation the formula is a proxy.}
+\end{frame}
+
+% 9
+\begin{frame}[shrink=8]{Inside the model: point features and primitive queries} \timemark{1:15}
+\begin{center}\includegraphics[width=.96\linewidth,height=3.06cm,keepaspectratio]{assets/paper_architecture.png}\end{center}
+\vspace{.07cm}
+\begin{columns}[T,onlytextwidth]
+\column{.51\textwidth}
+\begin{itemize}\setlength\itemsep{.28em}
+\item Input: $\mathcal P\in\mathbb R^{N\times3}$.
+\item \textbf{PVCNN} point encoder: $F_{PC}\in\mathbb R^{N\times D}$.
+\item $P$ positional \textbf{superquadric queries}: $F_{SQ}\in\mathbb R^{P\times D}$.
+\end{itemize}
+\column{.47\textwidth}
+\begin{itemize}\setlength\itemsep{.28em}
+\item $L$ Transformer layers: query self-attention + point-feature cross-attention.
+\item Heads output $\{(\Theta_p,e_p)\}_{p=1}^P$ and soft point assignments.
+\end{itemize}
+\end{columns}
+\vspace{.06cm}\centering
+$\displaystyle W=\operatorname{softmax}_{p}\!\bigl(F_{PC}\,\phi(F_{SQ})^\top\bigr)\in\mathbb R^{N\times P}$
+\src{Paper Fig. 3 and Eq. (4); $N=4096$, $P=16$, $D=128$, $L=3$ in experiments.}
+\end{frame}
+
+% 10
+\begin{frame}{Why change the loss? Chamfer alone is insufficient} \timemark{0:40}
+\begin{columns}[T,onlytextwidth]
+\column{.53\textwidth}
+\centering\includegraphics[width=\linewidth,height=4.5cm,keepaspectratio]{assets/paper_qualitative_shapenet.png}
+\src{Paper Fig. 4: SuperDec vs. rigid SuperFlex vs. deformable SuperFlex.}
+\column{.45\textwidth}
+\begin{block}{Chamfer distance}
+Matches samples on observed and predicted \textbf{surfaces}, not directly the \textbf{solid union}.
+\end{block}
+\begin{itemize}\setlength\itemsep{.52em}
+\item Rounded-off shape boundaries.
+\item Gaps between neighbouring primitives.
+\item Poor coupling of global volume and local surface alignment.
+\end{itemize}
+\vspace{.13cm}\centering\cblue{Solution: global occupancy + local surface alignment.}
+\end{columns}
+\src{Paper Sec. 4.1. The paper describes these shortcomings for primarily Chamfer-supervised baselines.}
+\end{frame}
+
+% 11
+\begin{frame}[shrink=7]{New loss I: global volumetric consistency} \timemark{1:15}
+\begin{columns}[T,onlytextwidth]
+\column{.55\textwidth}
+\vspace{.13cm}
+\begin{enumerate}\setlength\itemsep{.57em}
+\item Convert each radial proxy to \textbf{soft occupancy}:\\[.05cm]
+$\displaystyle I_p(\mathbf x)=\sigma\!\left(-\frac{d_p(\mathbf x)}{T_{\rm IoU}}\right)$.
+\item Aggregate existing primitives by a \textbf{probabilistic OR}:\\[.05cm]
+$\displaystyle\hat O(\mathbf x)=1-\prod_{p=1}^P(1-e_p I_p(\mathbf x))$.
+\item Compare with ground-truth occupancy $O$ over uniform samples $\mathcal V$.
+\end{enumerate}
+\column{.43\textwidth}
+\centering\includegraphics[width=\linewidth,height=3.25cm,keepaspectratio]{assets/demo_occupancy.png}
+\vspace{.06cm}
+{\footnotesize If $e_1=e_2=1$:\par}
+$\hat O=I_1+I_2-I_1 I_2$.
+\end{columns}
+\vspace{.11cm}
+\begin{equation*}
+\boxed{\mathcal L_{\rm IoU}=-\log\frac{\sum_{\mathbf x\in\mathcal V}\hat O(\mathbf x)O(\mathbf x)}{\sum_{\mathbf x\in\mathcal V}[\hat O(\mathbf x)+O(\mathbf x)-\hat O(\mathbf x)O(\mathbf x)]}}
+\end{equation*}
+\src{Paper Eqs. (6)--(8). Original 2D diagram; actual loss is sampled in 3D.}
+\end{frame}
+
+% 12
+\begin{frame}{New loss II: surface alignment, point by point} \timemark{1:05}
+\begin{columns}[T,onlytextwidth]
+\column{.59\textwidth}
+\vspace{.18cm}
+\begin{equation*}
+\boxed{\mathcal L_{\rm SDF}=\frac1N\sum_{i=1}^N\sum_{p=1}^P w_{ip}\,\psi\bigl(d(\mathbf x_i;\Theta_p)\bigr)}
+\end{equation*}
+\begin{itemize}\setlength\itemsep{.47em}
+\item $w_{ip}$: point $i$'s soft assignment to primitive $p$.
+\item $d$: signed radial \textbf{surrogate}, not exact Euclidean SDF.
+\item $\psi$: robust bounded asymmetric distance penalty.
+\end{itemize}
+\vspace{.12cm}
+{\small\color{grey} Appendix B.2: $\delta=0.05$, $\omega=0.1$ in the selected model.}
+\column{.39\textwidth}
+\centering\includegraphics[width=\linewidth,height=3.85cm,keepaspectratio]{assets/demo_psi.png}
+\vspace{.03cm}
+{\footnotesize $\psi(d)=\begin{cases}\delta\tanh(d/\delta),& d\ge0,\\-\omega\delta\tanh(d/\delta),& d<0.\end{cases}$}
+\end{columns}
+\src{Paper Eq. (9), Appendix B.2. Original activation plot.}
+\end{frame}
+
+% 13
+\begin{frame}{Compact decompositions require explicit regularization} \timemark{0:45}
+\vspace{.06cm}
+\begin{equation*}
+\boxed{\mathcal L=\lambda_{\rm IoU}\mathcal L_{\rm IoU}+\lambda_{\rm SDF}\mathcal L_{\rm SDF}
++\lambda_o\mathcal L_{\rm overlap}+\lambda_s\mathcal L_{\rm sparsity}+\lambda_e\mathcal L_{\rm exist}}
+\end{equation*}
+\vspace{.14cm}
+\begin{columns}[T,onlytextwidth]
+\column{.32\textwidth}
+\begin{block}{Overlap}
+$\displaystyle\mathbb E_{\mathbf x}\!\left[\operatorname{ReLU}(\sum_p I_p(\mathbf x)-1)\right]$\\[.1cm]
+Discourage redundant volume.
+\end{block}
+\column{.32\textwidth}
+\begin{block}{Sparsity}
+$\displaystyle m_p=\frac1N\sum_i w_{ip}$\\[.1cm]
+Penalize excess primitive use; encourage parsimonious sets.
+\end{block}
+\column{.32\textwidth}
+\begin{block}{Existence}
+$\displaystyle\hat e_p=\mathbf1[m_p>\epsilon_e]$\\[.1cm]
+Binary cross-entropy aligns predicted existence with usage.
+\end{block}
+\end{columns}
+\src{Paper Eqs. (5), (10)--(11). Sparsity and existence terms are inherited from SuperDec.}
+\end{frame}
+
+% 14
+\begin{frame}{Optional test-time optimization: local geometric refinement} \timemark{1:00}
+\begin{columns}[T,onlytextwidth]
+\column{.50\textwidth}
+\begin{enumerate}\setlength\itemsep{.56em}
+\item \textbf{Select} active primitives: $e_p>0.5$.
+\item \textbf{Optimize} their geometry $\Theta_p$ by Adam, holding the set fixed.
+\item \textbf{Replace} pointwise assignments with a global distance to the union.
+\end{enumerate}
+\vspace{.15cm}
+\begin{equation*}\boxed{\widetilde d(\mathbf x)=-T\log\!\sum_{p\in\mathcal A}\exp\!\left(-\frac{d_p(\mathbf x)}{T}\right)}\end{equation*}
+\centering{\footnotesize Smooth approximation to $\min_{p\in\mathcal A}d_p(\mathbf x)$.}
+\column{.47\textwidth}
+\centering\includegraphics[width=\linewidth,height=3.75cm,keepaspectratio]{assets/paper_optimization.png}
+\src{Paper Fig. 5. Refines existing primitives rather than training a new network.}
+\end{columns}
+\vspace{.05cm}\centering\cblue{Result: 0.72 $\rightarrow$ 0.87 IoU, but 0.0082 s $\rightarrow$ 5 s/object.}
+\src{Paper Sec. 4.2, Table 2: 1000 Adam steps, $T_{\rm opt}=0.01$.}
+\end{frame}
+
+% 15
+\begin{frame}{Partial scans: from self-supervision to structural completion} \timemark{1:00}
+\begin{columns}[T,onlytextwidth]
+\column{.48\textwidth}
+\centering\includegraphics[width=\linewidth,height=4.4cm,keepaspectratio]{assets/paper_partial_ase.png}
+\src{Paper Fig. 6: partial input; standard vs. robust model.}
+\column{.50\textwidth}
+\vspace{.08cm}
+\begin{enumerate}\setlength\itemsep{.53em}
+\item On \textbf{complete} clouds, predict and optimize high-quality primitive sets.
+\item Treat the resulting sets as \textbf{pseudo-ground truth}.
+\item \textbf{Fine-tune} on occluded inputs to reconstruct complete primitive structure.
+\end{enumerate}
+\vspace{.12cm}
+\begin{beamercolorbox}[rounded=true,sep=.15cm]{block body}
+Because primitives form a set, Hungarian matching removes ordering ambiguity before applying shape-based Chamfer supervision.
+\end{beamercolorbox}
+\end{columns}
+\src{Paper Sec. 4.3. This phase is supervised by generated targets, unlike the first phase.}
+\end{frame}
+
+% 16
+\begin{frame}{Experimental protocol: what was actually tested?} \timemark{0:45}
+\vspace{.11cm}
+\begin{columns}[T,onlytextwidth]
+\column{.49\textwidth}
+\begin{block}{Object-level: ShapeNet}
+\begin{itemize}\setlength\itemsep{.35em}
+\item 13 object categories.
+\item 4096 sampled points/object.
+\item 16 maximum primitive queries.
+\item 1000 training epochs.
+\item 4 $\times$ NVIDIA GH200 GPUs reported for training.
+\end{itemize}
+\end{block}
+\column{.49\textwidth}
+\begin{block}{Partial observations}
+\begin{itemize}\setlength\itemsep{.35em}
+\item \textbf{ASE}: quantitative evaluation with full object ground truth.
+\item \textbf{ScanNet++}: qualitative real-world scenes.
+\item Evaluate IoU, F-score, Chamfer L1/L2, \#primitives, runtime.
+\end{itemize}
+\end{block}
+\end{columns}
+\vspace{.25cm}\centering\cblue{Separate feed-forward inference from the much slower optional refinement.}
+\src{Paper Sec. 5. Training-compute specification does not imply the same hardware is required for inference.}
+\end{frame}
+
+% 17
+\begin{frame}{ShapeNet: the actual quantitative comparison} \timemark{0:55}
+\begin{center}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{lrrrr}
+\toprule
+Method & IoU $\uparrow$ & F $\uparrow$ & \# primitives $\downarrow$ & Runtime $\downarrow$ \\
+\midrule
+Marching Primitives & 0.56 & 0.18 & 24.10 & 163.41 s\\
+SuperDec & 0.59 & 0.28 & 5.79 & 0.0075 s\\
+\textbf{SuperFlex (rigid)} & \textbf{0.70} & 0.35 & 6.04 & 0.0075 s\\
+\rowcolor{pale}\textbf{SuperFlex (deformable)} & \textbf{0.72} & \textbf{0.37} & \textbf{5.64} & 0.0082 s\\
+\bottomrule
+\end{tabular}
+\end{center}
+\vspace{.2cm}
+\begin{columns}[T,onlytextwidth]
+\column{.49\textwidth}
+\begin{block}{Largest advance}
+The new loss makes the \textbf{rigid} model jump from 0.59 to 0.70 IoU.
+\end{block}
+\column{.49\textwidth}
+\begin{block}{Added expressiveness}
+Bending + tapering improve from 0.70 to 0.72 while keeping a compact representation.
+\end{block}
+\end{columns}
+\src{Paper Table 1, ShapeNet. Forward passes only; all numbers are paper-reported, not reproduced here.}
+\end{frame}
+
+% 18
+\begin{frame}{Ablation: why do the losses work together?} \timemark{1:15}
+\vspace{.04cm}
+\begin{center}\renewcommand{\arraystretch}{1.22}
+\begin{tabular}{lrrrr}
+\toprule
+Supervision & IoU $\uparrow$ & $L_2\downarrow$ & Overlap $\downarrow$ & \# prim. $\downarrow$\\
+\midrule
+SuperDec loss & 0.59 & 0.050 & 4\% & 5.78\\
+$\mathcal L_{\rm IoU}$ only & \textbf{0.74} & 0.124 & 32\% & 5.94\\
+$\mathcal L_{\rm IoU}+\mathcal L_{\rm SDF}$ & 0.72 & \textbf{0.042} & 14\% & 5.80\\
+\rowcolor{pale}+ $\mathcal L_{\rm overlap}$ & 0.72 & 0.043 & \textbf{8\%} & \textbf{5.64}\\
+\bottomrule
+\end{tabular}\end{center}
+\vspace{.14cm}
+\begin{itemize}\setlength\itemsep{.42em}
+\item \cblue{IoU alone}: much stronger solid reconstruction, but too much overlap.
+\item \cblue{SDF term}: restores surface precision ($L_2$: 0.124 $\rightarrow$ 0.042).
+\item \cblue{Overlap term}: brings redundancy down from 14\% to 8\%.
+\end{itemize}
+\src{Paper Table 4. Sparsity and existence are held fixed; the IoU score does not improve monotonically with every added term.}
+\end{frame}
+
+% 19
+\begin{frame}{Why keep deformation and test-time optimization?} \timemark{0:45}
+\begin{columns}[T,onlytextwidth]
+\column{.49\textwidth}
+\centering\textbf{Deformation ablation (refined)}\par\vspace{.15cm}
+\begin{tabular}{lcc}
+\toprule
+Taper/Bend & IoU & $L_2$\\\midrule
+Neither & 0.81 & 0.041\\
+Taper only & 0.83 & 0.038\\
+Bend only & 0.84 & 0.037\\
+\rowcolor{pale}Both & \textbf{0.85} & \textbf{0.036}\\\bottomrule
+\end{tabular}
+\vspace{.18cm}\ctiny{Paper Table 5: same undeformed initializations, different allowed deformations in refinement.}
+\column{.49\textwidth}
+\centering\textbf{Test-time optimization}\par\vspace{.15cm}
+\begin{tabular}{lcc}
+\toprule
+ & No TTO & With TTO\\\midrule
+IoU & 0.72 & \textbf{0.87}\\
+F-score & 0.37 & \textbf{0.49}\\
+Runtime & \textbf{0.0082 s} & 5 s\\\bottomrule
+\end{tabular}
+\vspace{.18cm}\ctiny{Paper Table 2: this is an accuracy--latency trade-off, not a free gain.}
+\end{columns}
+\vspace{.23cm}\centering\cblue{Refinement improves geometry; learned feed-forward inference preserves speed.}
+\end{frame}
+
+% 20
+\begin{frame}[shrink=3]{Occluded objects: generalization needs a new training signal} \timemark{0:50}
+\begin{columns}[T,onlytextwidth]
+\column{.51\textwidth}
+\centering\includegraphics[width=\linewidth,height=4.6cm,keepaspectratio]{assets/paper_scannet.png}
+\src{Paper Fig. 7: qualitative ScanNet++ scene reconstructions.}
+\column{.47\textwidth}
+\vspace{.2cm}
+\begin{tabular}{lr}
+\toprule
+ASE partial-cloud method & IoU\\\midrule
+SuperDec & 0.20\\
+SuperFlex, base & 0.20\\
++ occlusion fine-tuning & 0.48\\
+\rowcolor{pale}+ ASE fine-tuning & \textbf{0.54}\\\bottomrule
+\end{tabular}
+\vspace{.23cm}
+\begin{block}{Interpretation}
+Completing unseen parts requires learned priors from \textbf{complete pseudo-targets}; improving the full-cloud fit alone does not solve occlusion.
+\end{block}
+\end{columns}
+\src{Paper Table 3, Fig. 7. ASE numbers are quantitative; ScanNet++ examples are qualitative.}
+\end{frame}
+
+% 21
+\begin{frame}[shrink=8]{Conclusions --- and what remains open} \timemark{0:55}
+\begin{columns}[T,onlytextwidth]
+\column{.57\textwidth}
+\begin{block}{Three things to remember}
+\begin{enumerate}\setlength\itemsep{.4em}
+\item \textbf{Representation}: interpretable deformable primitives instead of unconstrained meshes.
+\item \textbf{Training}: volumetric union + local surface alignment + compactness constraints.
+\item \textbf{Generalization}: full-object pseudo-targets make completion from partial scans possible.
+\end{enumerate}
+\end{block}
+\column{.41\textwidth}
+\begin{block}{Limitations and caveats}
+\begin{itemize}\setlength\itemsep{.32em}
+\item Approximate rather than exact Euclidean SDF.
+\item Optional refinement is slower.
+\item Dependence on generated complete-shape targets and shape priors.
+\item Primitive abstractions cannot express every fine detail.
+\end{itemize}
+\end{block}
+\end{columns}
+\vspace{.16cm}\centering{\large\color{blue}\bfseries How much geometry can a few meaningful parameters recover?}\par\vspace{.05cm}
+\src{Primary source: Tavernini et al., ECCV 2026, arXiv:2607.01015. Code: github.com/GabrielTavernini/superflex.}
+\end{frame}
+
+\appendix
+\setbeamercolor{frametitle}{fg=teal,bg=white}
+\begin{frame}[plain]\centering\vfill{\fontsize{36}{40}\selectfont\color{navy}\bfseries Discussion / Q\&A}\par\vspace{.35cm}{\Large\color{grey} Backup mathematics, design choices and implementation}\vfill\end{frame}
+
+% Appendix 1
+\begin{frame}{Backup A: exact $z$-axis deformation equations}
+\vspace{.1cm}
+\begin{equation*}
+T^{-1}(x,y,z)=\begin{pmatrix}\frac{x}{1+\tau_x z/s_z}\\[.2cm]\frac{y}{1+\tau_y z/s_z}\\z\end{pmatrix}.
+\end{equation*}
+\vspace{.2cm}
+\begin{equation*}
+B_z^{-1}(x,y,z)=\begin{pmatrix}x-(A-r)\cos\alpha_z\\ y-(A-r)\sin\alpha_z\\\gamma/k_z\end{pmatrix},\quad
+\begin{aligned}
+A&=x\cos\alpha_z+y\sin\alpha_z,\\
+\gamma&=\operatorname{atan2}(z,k_z^{-1}-A),\\
+r&=k_z^{-1}-\sqrt{z^2+(k_z^{-1}-A)^2}.
+\end{aligned}
+\end{equation*}
+\src{Paper Appendix A. Coordinate branches and $k=0$ limits need care; $\operatorname{atan2}$ makes the intended quadrant choice explicit.}
+\end{frame}
+
+% Appendix 2
+\begin{frame}{Backup B: why radial distance is exact only in a restricted sense}
+\vspace{.13cm}
+\begin{itemize}\setlength\itemsep{.4em}
+\item Rigid superellipsoid: $q(\lambda x)=\lambda^{2/\epsilon_1}q(x)$.
+\item Exact ray intersection at $\lambda_*=q(x)^{-\epsilon_1/2}$; radial displacement $\|x\|(1-\lambda_*)$.
+\item \textbf{Not the Euclidean SDF}: nearest surface point need not lie on the center ray.
+\item With nonlinear tapering/bending, $q(D^{-1}(\lambda x))$ generally is not homogeneous; substitution into the same closed form is a \textbf{surrogate even for the radial ray intersection}.
+\end{itemize}
+\begin{center}\includegraphics[width=.67\linewidth,height=2.5cm,keepaspectratio]{assets/demo_radial.png}\end{center}
+\src{Paper Eq. (3) describes this as radial distance. Geometric qualification follows from the lack of homogeneity after deformation.}
+\end{frame}
+
+% Appendix 3
+\begin{frame}{Backup C: why $\alpha$ is not redundant with $k$}
+\begin{columns}[T,onlytextwidth]
+\column{.55\textwidth}
+\centering\includegraphics[width=\linewidth,height=4.8cm,keepaspectratio]{assets/demo_bend.png}
+\column{.43\textwidth}
+\begin{itemize}\setlength\itemsep{.5em}
+\item $k$: magnitude of the \textbf{curvature}.
+\item $\alpha$: \textbf{orientation of the bending plane} within the orthogonal cross-section.
+\item Same $k$, different $\alpha$: geometrically distinct deformed shapes.
+\item Paper ablation (subset): IoU 0.83 without $\alpha$ vs. 0.86 with it.
+\end{itemize}
+\end{columns}
+\src{Paper Appendix A.3 and Table 6.}
+\end{frame}
+
+% Appendix 4
+\begin{frame}{Backup D: the matching and occlusion loss}
+\vspace{.05cm}
+\begin{equation*}
+\mathcal L_{\rm geom}=\sum_{p\in\mathrm{matched\ active}}\operatorname{CD}\!\left(\mathcal S(\hat\Theta_p),\mathcal S(\Theta_p)\right).
+\end{equation*}
+\begin{equation*}
+\boxed{\mathcal L_{\rm sup}=\mathcal L_{\rm geom}+\lambda_{\rm IoU}\mathcal L_{\rm IoU}+\mathcal L_{\rm rigid}}
+\end{equation*}
+\begin{itemize}\setlength\itemsep{.46em}
+\item Use a \textbf{Hungarian one-to-one assignment} between the predicted and pseudo-ground-truth primitive sets.
+\item Match based on \textbf{sampled surface geometry}, not raw parameter identity.
+\item $\mathcal L_{\rm rigid}$ compares counterparts with deformations switched off: a coarse-shape prior.
+\item Necessary because different parameterizations, symmetries and permutations can produce similar surfaces.
+\end{itemize}
+\src{Paper Sec. 4.3 and Eq. (12).}
+\end{frame}
+
+% Appendix 5
+\begin{frame}{Backup E: metrics and sampling are not interchangeable}
+\begin{columns}[T,onlytextwidth]
+\column{.50\textwidth}
+\begin{block}{Volume IoU}
+$\displaystyle\frac{|V_{\rm pred}\cap V_{\rm GT}|}{|V_{\rm pred}\cup V_{\rm GT}|}$
+\end{block}
+\begin{block}{Chamfer}
+Bidirectional nearest-neighbour distances between \textbf{sampled surface points}. L1 and L2 in reported tables are multiplied by $10^2$.
+\end{block}
+\column{.48\textwidth}
+\begin{block}{F-score}
+At a paper-defined distance threshold, balance precision and recall of sampled surface correspondences.
+\end{block}
+\begin{block}{Normal completeness}
+Nearest reconstructed neighbour of a GT point; average absolute unit-normal dot product. Measures alignment, not watertightness.
+\end{block}
+\end{columns}
+\src{Paper Sec. 5; Appendix B.2. A model may improve IoU while worsening fine surface distance.}
+\end{frame}
+
+% Appendix 6
+\begin{frame}{Backup F: parameter, hyperparameter and implementation details}
+\begin{columns}[T,onlytextwidth]
+\column{.51\textwidth}
+\begin{block}{Training choices}
+\begin{tabular}{ll}
+Point count $N$ & 4096\\
+Primitive queries $P$ & 16\\
+Feature width $D$ & 128\\
+Decoder layers $L$ & 3\\
+Epochs & 1000\\
+Initial learning rate & $3\times10^{-4}$\\
+Robust fine-tuning LR & $10^{-4}$\\
+IoU temperature & $10^{-3}$\\
+\end{tabular}
+\end{block}
+\column{.47\textwidth}
+\begin{block}{Reproducing authors' inference}
+\texttt{git clone https://github.com/}\newline\texttt{GabrielTavernini/superflex}\par\vspace{.17cm}
+\texttt{pip install -r requirements.txt}\par\texttt{pip install -e .}\par\texttt{bash scripts/download\_checkpoints.sh}\par\texttt{python demo\_viser.py}
+\end{block}
+\end{columns}
+\src{Paper Sec. 5; official GitHub README. Inference is available with checkpoints; full training is computationally costly.}
+\end{frame}
+
+% Appendix 7
+\begin{frame}{Backup G: additional 3D scene pipeline from one image}
+\begin{center}\includegraphics[width=.83\linewidth,height=3.5cm,keepaspectratio]{assets/paper_rgb_pipeline.png}\end{center}
+\begin{itemize}\setlength\itemsep{.35em}
+\item SAM 3: masks instances in the original RGB image.
+\item MoGE: produces partial 3D point maps from a single view.
+\item Robust SuperFlex: turns partial object point sets into complete primitive abstractions.
+\end{itemize}
+\src{Paper supplementary Fig. 13. This is an application, not the core inference pipeline or an additional benchmark result.}
+\end{frame}
+
+% Appendix 8
+\begin{frame}{References and resources}
+\begin{itemize}\setlength\itemsep{.65em}
+\item Tavernini et al., \textit{SuperFlex: Deformable Superquadrics for Point Cloud Decomposition}, ECCV 2026, arXiv:2607.01015.
+\item Fedele et al., \textit{SuperDec: 3D Scene Decomposition with Superquadric Primitives}, ICCV 2025.
+\item Barr, \textit{Superquadrics and Angle-Preserving Transformations}, IEEE CG\&A, 1981.
+\item Liu et al., \textit{Marching-Primitives: Shape Abstraction from Signed Distance Function}, CVPR 2023.
+\item SuperFlex project: \texttt{https://superflex3d.github.io/}
+\item Source and checkpoints: \texttt{https://github.com/GabrielTavernini/superflex}
+\end{itemize}
+\src{All source-paper figures included for scholarly presentation and credited on their slides. Notebook illustrations are original.}
+\end{frame}
+\end{document}
